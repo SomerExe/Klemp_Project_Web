@@ -42,7 +42,7 @@ function App() {
     if (!file) return
     const formData = new FormData(); formData.append('file', file)
     try {
-      const res = await axios.post('http://127.0.0.1:8000/upload', formData)
+      const res = await axios.post('https://api-klemp.somer.dev/upload', formData)
       if (res.data.status === 'success') {
         setModelConfig({ name: file.name, url: URL.createObjectURL(file) })
         setClamps([]); setZones([])
@@ -53,7 +53,7 @@ function App() {
   const handleAnalyze = async () => {
     setLoading(true)
     try {
-      const res = await axios.post('http://127.0.0.1:8000/analyze', {
+      const res = await axios.post('https://api-klemp.somer.dev/analyze', {
         clamp_count: parseInt(clampCount), zones: zones, model_name: modelConfig.name
       })
       if (res.data.status === "success") setClamps(res.data.clamps)
