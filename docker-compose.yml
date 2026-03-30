@@ -1,0 +1,16 @@
+services:
+  backend-api:
+    build: ./backend
+    container_name: klemp-backend
+    ports:
+      - "5002:5000" # Python genelde 5000 portunda çalışır, biz dışarıya 5002 olarak veriyoruz.
+    restart: always
+
+  frontend-web:
+    build: ./frontend
+    container_name: klemp-frontend
+    ports:
+      - "5001:80" # Nginx üzerinden React'i 5001 portunda yayınlıyoruz (Alt alan adımız için)
+    depends_on:
+      - backend-api
+    restart: always

@@ -1,0 +1,15 @@
+# Visual Studio ve VS Code Cache
+.vs/
+.vscode/
+
+# Node.js (Frontend)
+node_modules/
+dist/
+build/
+.npm/
+
+# Python (Backend)
+__pycache__/
+*.pyc
+env/
+venv/
