@@ -60,4 +60,7 @@ async def analyze(req: AnalysisRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    # Host: 0.0.0.0 (Dış dünyaya kapıyı açar)
+    # Port: 5000 (Docker Compose ile uyumlu hale getirir)
+    # Reload: False (Sunucuda daha stabil çalışması için kapatılır)
+    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=False)
