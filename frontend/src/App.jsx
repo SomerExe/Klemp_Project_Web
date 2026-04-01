@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 import Scene3D from './components/Scene3D'
 
+// CANLI SUNUCU (PRODUCTION) URL AYARI
+const API_BASE_URL = "https://api-klemp.somer.dev"; 
+
 function App() {
   const [zones, setZones] = useState([])
   const [clamps, setClamps] = useState([])
@@ -22,13 +25,12 @@ function App() {
         const currentTime = new Date().getTime()
         const timeDiff = currentTime - lastKeyTime.current
         
-        if (timeDiff < 300) { // 300ms içinde ikinci basış
+        if (timeDiff < 300) { 
           setShowManual(prev => !prev)
         }
         lastKeyTime.current = currentTime
       }
       
-      // Seçili bölgeyi 'Delete' ile silme (Ekstra kolaylık)
       if (e.key === 'Delete' && selectedIndex !== null) {
         deleteZone()
       }
@@ -37,28 +39,54 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedIndex, zones])
 
+  // --- DOSYA YÜKLEME ---
   const handleFileChange = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-    const formData = new FormData(); formData.append('file', file)
+    
+    console.log("Dosya yükleniyor:", file.name);
+    const formData = new FormData(); 
+    formData.append('file', file)
+    
     try {
-      const res = await axios.post('https://api-klemp.somer.dev/upload', formData)
+      const res = await axios.post(`${API_BASE_URL}/upload`, formData)
       if (res.data.status === 'success') {
+        console.log("Dosya başarıyla yüklendi.");
         setModelConfig({ name: file.name, url: URL.createObjectURL(file) })
-        setClamps([]); setZones([])
+        setClamps([]); 
+        setZones([]);
       }
-    } catch (err) { alert("Yükleme hatası!") }
+    } catch (err) { 
+      console.error("YÜKLEME HATASI:", err);
+      alert("Yükleme hatası! Lütfen bağlantınızı kontrol edin.");
+    }
   }
 
+  // --- ANALİZİ BAŞLAT ---
   const handleAnalyze = async () => {
-    setLoading(true)
+    setLoading(true);
+    console.log("Analiz isteği gönderiliyor...");
+
     try {
-      const res = await axios.post('https://api-klemp.somer.dev/analyze', {
-        clamp_count: parseInt(clampCount), zones: zones, model_name: modelConfig.name
+      const res = await axios.post(`${API_BASE_URL}/analyze`, {
+        clamp_count: parseInt(clampCount), 
+        zones: zones, 
+        model_name: modelConfig.name
       })
-      if (res.data.status === "success") setClamps(res.data.clamps)
-    } catch (e) { alert("Analiz hatası!") }
-    setLoading(false)
+
+      console.log("BACKEND CEVABI:", res.data);
+
+      if (res.data.status === "success") {
+          console.log("Analiz başarılı, klempler ekrana çiziliyor...");
+          setClamps(res.data.clamps);
+      } else {
+          console.error("Backend hata döndürdü:", res.data.message);
+      }
+    } catch (e) { 
+      console.error("ANALİZ İSTEĞİ SIRASINDA HATA:", e.response?.data || e.message);
+      alert("Analiz hatası! Lütfen daha sonra tekrar deneyin.");
+    }
+    setLoading(false);
   }
 
   const deleteZone = () => {
@@ -94,25 +122,32 @@ function App() {
 
       {/* ÜST NAVİGASYON */}
       <nav style={navStyle}>
-        <h2 style={{ margin: 0, color: '#22c55e', fontSize: '1.1rem' }}>KLEMP AI <small style={{color:'#888'}}>V3</small></h2>
+        <h2 style={{ margin: 0, color: '#22c55e', fontSize: '1.1rem' }}>KLEMP OTOMASYONU <small style={{color:'#888'}}>V1.4</small></h2>
         <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} accept=".stl" />
         <button onClick={() => fileInputRef.current.click()} style={btn('#3b82f6')}>📂 Model Seç</button>
         <div style={{display:'flex', alignItems:'center', gap:'5px'}}>
-          <label style={{fontSize:'0.7rem'}}>Klemp:</label>
+          <label style={{fontSize:'0.7rem', color:'#fff'}}>Klemp:</label>
           <input type="number" value={clampCount} onChange={(e)=>setClampCount(e.target.value)} style={inputS} min="1"/>
         </div>
+        
         <button onClick={() => setZones([...zones, { x: 0, y: 50, z: 0, type: 'Exclude', scaleX: 1, scaleY: 1, scaleZ: 1 }])} style={btn('#ff4444')}>+ Yasak</button>
         <button onClick={() => setZones([...zones, { x: 0, y: 50, z: 0, type: 'Focus', scaleX: 1, scaleY: 1, scaleZ: 1 }])} style={btn('#44ff44')}>+ Kaynak</button>
-        <button onClick={handleAnalyze} disabled={loading} style={{ ...btn('', '#22c55e'), marginLeft: 'auto', fontWeight:'bold' }}>
+        
+        <button onClick={handleAnalyze} disabled={loading} style={{ ...btn('', loading ? '#555' : '#22c55e'), marginLeft: 'auto', fontWeight:'bold' }}>
           {loading ? 'AI ANALİZ EDİYOR...' : 'ANALİZİ BAŞLAT'}
         </button>
       </nav>
 
+      {/* 3D SAHNE */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}>
         <Scene3D 
-          zones={zones} clamps={clamps} modelUrl={modelConfig.url} modelName={modelConfig.name}
+          zones={zones} 
+          clamps={clamps} 
+          modelUrl={modelConfig.url} 
+          modelName={modelConfig.name}
           onZoneUpdate={(i, d) => { const n=[...zones]; n[i]=d; setZones(n); }}
-          selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex}
+          selectedIndex={selectedIndex} 
+          setSelectedIndex={setSelectedIndex}
         />
       </div>
     </div>
@@ -139,7 +174,7 @@ const modalContentStyle = {
   border: '1px solid #333', minWidth: '350px', textAlign: 'center'
 }
 
-const listStyle = { textAlign: 'left', listStyle: 'none', padding: 0, margin: '20px 0', lineHeight: '2' }
+const listStyle = { textAlign: 'left', listStyle: 'none', padding: 0, margin: '20px 0', lineHeight: '2', color: '#fff' }
 const closeBtnStyle = { padding: '10px 20px', background: '#22c55e', border: 'none', color: 'white', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }
 const navStyle = { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100, padding: '15px 20px', background: 'rgba(25, 25, 25, 0.95)', display: 'flex', alignItems:'center', gap: '15px', borderBottom: '1px solid #333' }
 const btn = (border, bg = '#333') => ({ padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', border: border ? `1px solid ${border}` : 'none', background: bg, color: 'white', fontSize: '0.8rem' })
