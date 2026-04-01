@@ -5,7 +5,7 @@ services:
     ports:
       - "5002:5000"
     volumes:
-      - ./data:/app/data  
+      - ./data:/data  # <--- İŞTE BURAYI DÜZELTTİK! (/app sildik)
     restart: always
 
   frontend-web:
